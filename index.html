@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]>      <html class="no-js"> <!--<![endif]-->
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title></title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="">
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script defer src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+</head>
+
+<body>
+    <!--[if lt IE 7]>
+            <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="#">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+    <script>
+        fetch('https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/movie-data.json')
+            .then(res => res.json())
+            .then(data => {
+
+                const padding = { top: 20, right: 20, bottom: 100, left: 20 }
+                const h = 400 + padding.top + padding.bottom
+                const w = 800 + padding.left + padding.right
+
+                const colors = ['#E7E247', '#A0D2DB', '#C490D1', '#D6B98C', '#7D8CC4', '#726DA8', '#B8336A']
+                const genres = ['Action', 'Drama', 'Family', 'Adventure', 'Animation', 'Comedy', 'Biography']
+
+                const colorGenres = new Array(genres.length).fill().map((value, index)=>{
+                    return {genre: genres[index], color: colors[index]}
+                })
+                console.log(colorGenres)
+
+                const svg = d3.select(".svg-container")
+                    .append("svg")
+                    .attr("width", w)
+                    .attr("height", h)
+
+                const root = d3.hierarchy(data).sum((d) => d.value)
+
+                const colorScale = d3.scaleOrdinal()
+                    .domain(genres)
+                    .range(colors)
+
+                console.log(data)
+
+                const formatThousands = d3.format("~s")
+
+                const tooltip = d3.select(".svg-container")
+                    .append('div')
+                    .attr('id', 'tooltip')
+                    .style('position', 'absolute')
+                    .style('background-color', 'rgba(255,255,255,0.6)')
+                    .style('min-width', '200px')
+                    .style('max-width', '260px')
+
+                function mouseover() {
+                    d3.select(this)
+                        .style('stroke', 'black')
+                    tooltip
+                        .style('opacity', 1)
+
+                }
+                function mousemove(event, d) {
+                    tooltip
+                        .attr('data-value', d.data.value)
+                        .style('bottom', h - d3.pointer(event)[1] + 15 + 'px')
+                        .style('left', d3.pointer(event)[0] - 10 + 'px')
+                        .style('padding', '4px')
+                        .style('border-radius', '4px')
+                        .style('overflow', 'visible')
+                        .html(`Title: ${d.data.name}<br>
+                                Genre: ${d.data.category}<br>
+                                Gross: $ ${formatThousands(d.data.value)}`)
+
+
+                }
+                function mouseout() {
+                    d3.select(this)
+                        .style('stroke', 'white')
+                    tooltip
+                        .text('')
+                        .style('opacity', 0)
+                }
+                d3.treemap()
+                    .size([w - padding.left - padding.right, h - padding.top - padding.bottom])
+                    .padding(1)
+                    (root)
+
+                svg.selectAll('rect')
+                    .data(root.leaves())
+                    .enter()
+                    .append('rect')
+                    .attr('class', 'tile')
+                    .attr('data-name', (d) => d.data.name)
+                    .attr('data-category', (d) => d.data.category)
+                    .attr('data-value', (d) => d.data.value)
+                    .attr('x', (d) => d.x0 +padding.left)
+                    .attr('y', (d) => d.y0 +padding.top)
+                    .attr('width', (d) => d.x1 - d.x0)
+                    .attr('height', (d) => d.y1 - d.y0)
+                    .style("stroke", "white")
+                    .style("fill", (d) => colorScale(d.data.category))
+                    .on("mouseover", mouseover)
+                    .on("mousemove", mousemove)
+                    .on("mouseout", mouseout)
+
+
+                const legend = svg.append("g")
+                    .attr('id', 'legend')
+                    .attr("transform", "translate(280,440)")
+                    .attr("height",'100px')
+                    .attr('width','100px')
+
+                legend.selectAll('rect')
+                    .data(colorGenres)
+                    .enter()
+                    .append('rect')
+                    .attr('class','legend-item')
+                    .attr('y',(d,i)=>{
+                        if(i<4){
+                            return 20*i
+                        }
+                        else{
+                            return 20*(i-4)
+                        }
+                    })
+                    .attr('x', (d,i)=>{
+                        if(i<4){
+                            return 0
+                        }
+                        else{
+                            return 200
+                        }
+                    })
+                    .attr('width','10px')
+                    .attr('height','10px')
+                    .attr('fill',(d)=>d.color)
+                
+                legend.selectAll('text')
+                    .data(colorGenres)
+                    .enter()
+                    .append('text')
+                    .attr('y',(d,i)=>{
+                        if(i<4){
+                            return 20*i+10
+                        }
+                        else{
+                            return 20*(i-4)+10
+                        }
+                    })
+                    .attr('x',(d,i)=>{
+                        if(i<4){
+                            return 20
+                        }
+                        else{
+                            return 220
+                        }
+                    })
+                    .text((d)=>d.genre)
+
+
+
+                
+            })
+    </script>
+    <style>
+        body {
+            padding: 0;
+            text-align: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        .outer {
+            display: table;
+            top: 0;
+            left: 0;
+            position: absolute;
+            width: 100%;
+            height: 100%
+        }
+
+        .middle {
+            display: table-cell;
+            vertical-align: middle;
+        }
+
+        .inner {
+            margin-left: auto;
+            margin-right: auto;
+            width: 840px;
+        }
+
+        .svg-container {
+            position: relative;
+            width: 840px;
+        }
+    </style>
+    <div class='outer'>
+        <div class='middle'>
+            <div class='inner'>
+                <h1 id='title'>
+                    Movie Gross Sales
+                </h1>
+                <h2 id='description'>
+                    Top 95 Movie Gross Sales Grouped by Genre
+                </h2>
+                <div class='svg-container'>
+                    <!-- Svg goes here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
